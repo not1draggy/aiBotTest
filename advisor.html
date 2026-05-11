@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="description" content="AI poradca pre výber nehnuteľnosti — 484.sk">
+<meta name="robots" content="noindex">
+<title>Poradca | 484.sk</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green:#1a6b3c;--green-dark:#145530;--green-light:#f0f7f3;--green-border:#c2ddd0;
+  --surface:#f5f6f5;--border:#e0e2e0;--text:#1a1c1a;--text-mid:#4a524d;--text-soft:#6e7870;--text-xsoft:#9da89f;
+  --white:#ffffff;--shadow:0 4px 24px rgba(0,0,0,0.08);--shadow-lg:0 16px 48px rgba(0,0,0,0.13);
+  --font:'DM Sans',-apple-system,sans-serif;--mono:'DM Mono',monospace;
+  --radius:12px;--radius-sm:8px;--radius-lg:18px;--header-h:56px;
+  --chat-max:680px;--transition:.2s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;-webkit-text-size-adjust:100%}
+body{font-family:var(--font);background:var(--surface);color:var(--text);height:100dvh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;overflow:hidden}
+
+/* ── HEADER ── */
+.hdr{height:var(--header-h);background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;position:relative;z-index:10}
+.hdr-logo{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--green);font-family:var(--mono);font-size:15px;font-weight:500}
+.hdr-logo-box{width:30px;height:30px;background:var(--green);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.hdr-logo-box svg{width:16px;height:16px}
+.hdr-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px}
+.hdr-badge{background:var(--green-light);border:1px solid var(--green-border);color:var(--green);font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:5px;letter-spacing:0.02em}
+.hdr-badge::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.lang-btn{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-family:var(--font);font-size:12.5px;font-weight:600;color:var(--text-mid);transition:all var(--transition)}
+.lang-btn:hover{border-color:var(--green);color:var(--green)}
+.lang-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow);z-index:200;min-width:155px;overflow:hidden;display:none}
+.lang-dropdown.open{display:block}
+.lang-opt{display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px;color:var(--text-mid);cursor:pointer;border:none;background:none;width:100%;font-family:var(--font);transition:background var(--transition)}
+.lang-opt:hover,.lang-opt.active{background:var(--green-light);color:var(--green);font-weight:600}
+.btn-back{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--white);cursor:pointer;font-family:var(--font);font-size:13px;font-weight:500;color:var(--text-mid);text-decoration:none;transition:all var(--transition)}
+.btn-back:hover{border-color:var(--green);color:var(--green)}
+
+/* ── CHAT AREA ── */
+.chat-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;align-items:center;padding:0 16px}
+.chat-inner{width:100%;max-width:var(--chat-max);flex:1;overflow-y:auto;padding:24px 0 16px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.chat-inner::-webkit-scrollbar{width:4px}
+.chat-inner::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+/* ── MESSAGES ── */
+.msg{display:flex;gap:10px;align-items:flex-end;animation:msgIn .3s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.bot{align-self:flex-start;max-width:88%}
+.msg.user{align-self:flex-end;flex-direction:row-reverse;max-width:80%}
+.msg-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:15px}
+.bot .msg-avatar{background:var(--green);color:var(--white)}
+.user .msg-avatar{background:var(--text);color:var(--white);font-size:12px;font-weight:700}
+.msg-bubble{padding:12px 16px;border-radius:var(--radius-lg);font-size:14px;line-height:1.6;word-break:break-word}
+.bot .msg-bubble{background:var(--white);border:1px solid var(--border);border-bottom-left-radius:4px;color:var(--text)}
+.user .msg-bubble{background:var(--green);color:var(--white);border-bottom-right-radius:4px}
+.msg-bubble p{margin-bottom:8px}
+.msg-bubble p:last-child{margin-bottom:0}
+.msg-bubble strong{font-weight:600}
+
+/* ── TYPING INDICATOR ── */
+.typing{display:flex;gap:5px;align-items:center;padding:14px 16px}
+.typing span{width:7px;height:7px;background:var(--text-xsoft);border-radius:50%;animation:typing 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes typing{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* ── QUICK REPLIES ── */
+.quick-replies{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}
+.qr-btn{padding:8px 14px;border-radius:20px;font-size:13px;font-weight:500;border:1.5px solid var(--green-border);color:var(--green);background:var(--green-light);cursor:pointer;font-family:var(--font);transition:all var(--transition);white-space:nowrap}
+.qr-btn:hover{background:var(--green);color:var(--white);border-color:var(--green)}
+.qr-btn:disabled{opacity:0.4;pointer-events:none}
+
+/* ── LISTING CARDS in chat ── */
+.chat-listings{display:flex;flex-direction:column;gap:8px;margin-top:4px;width:100%}
+.chat-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;gap:0;cursor:pointer;transition:border-color var(--transition),box-shadow var(--transition);text-decoration:none;color:inherit}
+.chat-card:hover{border-color:var(--green-border);box-shadow:var(--shadow)}
+.chat-card-img{width:100px;flex-shrink:0;background:var(--green-light);position:relative;min-height:80px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.chat-card-img img{width:100%;height:100%;object-fit:cover}
+.chat-card-body{flex:1;padding:10px 12px;min-width:0}
+.chat-card-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:3px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.chat-card-meta{font-size:11.5px;color:var(--text-soft)}
+.chat-card-price{font-size:14px;font-weight:700;color:var(--green);margin-top:4px}
+.chat-cta{display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:13px;font-weight:600;color:var(--green);background:var(--green-light);border:1px solid var(--green-border);padding:8px 16px;border-radius:20px;cursor:pointer;text-decoration:none;transition:all var(--transition)}
+.chat-cta:hover{background:var(--green);color:var(--white)}
+.chat-cta-wrap{margin-top:4px}
+
+/* ── INPUT ── */
+.input-bar{background:var(--white);border-top:1px solid var(--border);padding:12px 16px;padding-bottom:max(12px,env(safe-area-inset-bottom,12px));flex-shrink:0;display:flex;justify-content:center}
+.input-inner{width:100%;max-width:var(--chat-max);display:flex;gap:8px;align-items:flex-end}
+.input-box{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:11px 14px;font-size:14px;font-family:var(--font);color:var(--text);outline:none;resize:none;max-height:120px;line-height:1.5;transition:border-color var(--transition)}
+.input-box:focus{border-color:var(--green)}
+.input-box::placeholder{color:var(--text-xsoft)}
+.send-btn{width:42px;height:42px;background:var(--green);border:none;border-radius:var(--radius-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background var(--transition)}
+.send-btn:hover{background:var(--green-dark)}
+.send-btn:disabled{opacity:0.4;cursor:not-allowed}
+.send-btn svg{width:18px;height:18px}
+
+/* ── RESET btn ── */
+.reset-btn{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-xsoft);background:none;border:none;cursor:pointer;font-family:var(--font);padding:4px 8px;border-radius:6px;transition:color var(--transition);margin:0 auto}
+.reset-btn:hover{color:var(--green)}
+
+@media(max-width:600px){
+  .hdr-center{display:none}
+  .chat-card-img{width:80px;min-height:70px}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <a href="index.html" class="hdr-logo">
+    <div class="hdr-logo-box">
+      <svg viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M2 7L8 2l6 5v7h-4V9H6v5H2V7z"/></svg>
+    </div>
+    484.sk
+  </a>
+  <div class="hdr-center">
+    <div class="hdr-badge">
+      <span>AI Poradca</span>
+    </div>
+  </div>
+  <div class="hdr-right" style="position:relative">
+    <button class="lang-btn" id="langBtn" onclick="LangSwitcher.toggle()">
+      <span id="langFlag">🇸🇰</span>
+      <span id="langCode">SK</span>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="lang-dropdown" id="langDropdown"></div>
+  </div>
+</header>
+
+<div class="chat-wrap">
+  <div class="chat-inner" id="chatInner"></div>
+</div>
+
+<div class="input-bar">
+  <div class="input-inner">
+    <textarea class="input-box" id="inputBox" rows="1" placeholder="Napíšte správu..." maxlength="500"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="Chat.send()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+/* ══════════════════════════════════════════════
+   LANGUAGE SWITCHER
+══════════════════════════════════════════════ */
+const LangSwitcher = (() => {
+  const LANGS = [
+    {code:'sk',label:'SK',flag:'🇸🇰',name:'Slovenčina'},
+    {code:'en',label:'EN',flag:'🇬🇧',name:'English'},
+    {code:'de',label:'DE',flag:'🇩🇪',name:'Deutsch'},
+    {code:'ru',label:'RU',flag:'🇷🇺',name:'Русский'},
+    {code:'uk',label:'UK',flag:'🇺🇦',name:'Українська'},
+  ];
+  let current = 'sk';
+
+  function init() {
+    // Načítaj jazyk z localStorage (synchronizácia s hlavnou stránkou)
+    const saved = localStorage.getItem('484_lang');
+    if (saved && LANGS.find(l=>l.code===saved)) current = saved;
+    const dd = document.getElementById('langDropdown');
+    LANGS.forEach(lang => {
+      const btn = document.createElement('button');
+      btn.className = 'lang-opt' + (lang.code===current?' active':'');
+      btn.innerHTML = `<span>${lang.flag}</span><span>${lang.name}</span>`;
+      btn.onclick = () => set(lang);
+      dd.appendChild(btn);
+    });
+    updateUI();
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.hdr-right')) dd.classList.remove('open');
+    });
+  }
+
+  function toggle() { document.getElementById('langDropdown').classList.toggle('open'); }
+
+  function set(lang) {
+    current = lang.code;
+    localStorage.setItem('484_lang', lang.code);
+    document.getElementById('langFlag').textContent = lang.flag;
+    document.getElementById('langCode').textContent = lang.label;
+    document.getElementById('langDropdown').classList.remove('open');
+    document.querySelectorAll('.lang-opt').forEach((b,i) => b.classList.toggle('active', LANGS[i].code===lang.code));
+    updateUI();
+  }
+
+  function updateUI() {
+    const l = current;
+    document.getElementById('langBtn').title = LANGS.find(x=>x.code===l)?.name;
+    const el = document.getElementById('langFlag');
+    const lobj = LANGS.find(x=>x.code===l);
+    if (el && lobj) el.textContent = lobj.flag;
+    const ce = document.getElementById('langCode');
+    if (ce && lobj) ce.textContent = lobj.label;
+  }
+
+  function get() { return current; }
+  return { init, toggle, get };
+})();
+
+/* ══════════════════════════════════════════════
+   SUPABASE
+══════════════════════════════════════════════ */
+async function loadListings() {
+  const res = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/inzeraty?select=*&aktivny=eq.true&order=created_at.desc`, {
+    headers: { 'apikey': CONFIG.SUPABASE_ANON, 'Authorization': `Bearer ${CONFIG.SUPABASE_ANON}` }
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+/* ══════════════════════════════════════════════
+   TRANSLATIONS
+══════════════════════════════════════════════ */
+const T = {
+  sk: {
+    welcome: 'Ahoj! 👋 Som váš AI poradca pre nehnuteľnosti. Pomôžem vám nájsť domov, ktorý sedí presne na vašu situáciu.\n\nPojďme začať — **koľko ľudí bude bývať v novom domove?**',
+    quickReplies_start: ['1–2 osoby','3–4 osoby','5 a viac'],
+    askChildren: 'Máte alebo plánujete deti?',
+    quickReplies_children: ['Bez detí','1–2 deti','3+ deti'],
+    askBudget: 'Aký máš orientačný rozpočet?',
+    quickReplies_budget: ['Do 150 000 €','150 000 – 250 000 €','250 000 – 350 000 €','350 000 € a viac'],
+    askPriority: 'Čo je pre vás najdôležitejšie?',
+    quickReplies_priority: ['Záhrada & priestor','Blízkosť škôl','Nízke náklady (A0+)','Parkové prostredie'],
+    askType: 'Zaujíma vás skôr:',
+    quickReplies_type: ['Rodinný dom','Byt','Pozemok na výstavbu'],
+    thinking: 'Analyzujem vaše požiadavky...',
+    noResults: 'Na základe vašich požiadaviek momentálne nemáme presný match, ale tu sú naše najbližšie ponuky:',
+    results: (n) => `Skvelé! Na základe vašich požiadaviek som vybral ${n} ${n===1?'nehnuteľnosť':n<5?'nehnuteľnosti':'nehnuteľností'} ktoré by vám mohli sadnúť:`,
+    viewAll: 'Zobraziť všetky ponuky',
+    detail: 'Detail',
+    reset: '↺ Začať odznova',
+    placeholder: 'Napíšte správu...',
+    advisor: 'AI Poradca',
+    back: 'Späť na ponuky',
+    filterHint: 'Chcete upraviť filtre alebo sa pozrieť na všetky dostupné nehnuteľnosti?',
+    ctaAll: '🏠 Zobraziť všetky nehnuteľnosti',
+  },
+  en: {
+    welcome: 'Hello! 👋 I\'m your AI real estate advisor. I\'ll help you find a home that fits your situation perfectly.\n\nLet\'s start — **how many people will live in the new home?**',
+    quickReplies_start: ['1–2 people','3–4 people','5 or more'],
+    askChildren: 'Do you have or plan to have children?',
+    quickReplies_children: ['No children','1–2 children','3+ children'],
+    askBudget: 'What is your approximate budget?',
+    quickReplies_budget: ['Up to €150,000','€150,000 – €250,000','€250,000 – €350,000','€350,000 and above'],
+    askPriority: 'What is most important to you?',
+    quickReplies_priority: ['Garden & space','Near schools','Low energy costs (A0+)','Park environment'],
+    askType: 'Are you more interested in:',
+    quickReplies_type: ['Family house','Apartment','Plot for construction'],
+    thinking: 'Analyzing your requirements...',
+    noResults: 'We don\'t have an exact match right now, but here are our closest listings:',
+    results: (n) => `Great! Based on your requirements, I found ${n} propert${n===1?'y':'ies'} that might suit you:`,
+    viewAll: 'View all listings',
+    detail: 'Detail',
+    reset: '↺ Start over',
+    placeholder: 'Type a message...',
+    advisor: 'AI Advisor',
+    back: 'Back to listings',
+    filterHint: 'Would you like to adjust filters or browse all available properties?',
+    ctaAll: '🏠 View all properties',
+  },
+  de: {
+    welcome: 'Hallo! 👋 Ich bin Ihr KI-Immobilienberater. Ich helfe Ihnen, ein Zuhause zu finden, das genau zu Ihrer Situation passt.\n\nLassen Sie uns beginnen — **wie viele Personen werden im neuen Zuhause wohnen?**',
+    quickReplies_start: ['1–2 Personen','3–4 Personen','5 und mehr'],
+    askChildren: 'Haben Sie Kinder oder planen Sie welche?',
+    quickReplies_children: ['Keine Kinder','1–2 Kinder','3+ Kinder'],
+    askBudget: 'Was ist Ihr ungefähres Budget?',
+    quickReplies_budget: ['Bis 150.000 €','150.000 – 250.000 €','250.000 – 350.000 €','350.000 € und mehr'],
+    askPriority: 'Was ist Ihnen am wichtigsten?',
+    quickReplies_priority: ['Garten & Raum','Schulnähe','Niedrige Kosten (A0+)','Parkumgebung'],
+    askType: 'Interessieren Sie sich eher für:',
+    quickReplies_type: ['Einfamilienhaus','Wohnung','Baugrundstück'],
+    thinking: 'Analysiere Ihre Anforderungen...',
+    noResults: 'Wir haben gerade keine genaue Übereinstimmung, aber hier sind unsere nächsten Angebote:',
+    results: (n) => `Ausgezeichnet! Basierend auf Ihren Anforderungen habe ich ${n} Immobilie${n===1?'':'n'} gefunden:`,
+    viewAll: 'Alle Angebote anzeigen',
+    detail: 'Detail',
+    reset: '↺ Von vorne beginnen',
+    placeholder: 'Nachricht schreiben...',
+    advisor: 'KI-Berater',
+    back: 'Zurück zu den Angeboten',
+    filterHint: 'Möchten Sie die Filter anpassen oder alle verfügbaren Immobilien durchsuchen?',
+    ctaAll: '🏠 Alle Immobilien anzeigen',
+  },
+  ru: {
+    welcome: 'Привет! 👋 Я ваш ИИ-консультант по недвижимости. Помогу найти дом, который идеально подойдёт для вашей ситуации.\n\nДавайте начнём — **сколько человек будет жить в новом доме?**',
+    quickReplies_start: ['1–2 человека','3–4 человека','5 и более'],
+    askChildren: 'Есть ли у вас дети или вы планируете?',
+    quickReplies_children: ['Без детей','1–2 ребёнка','3+ детей'],
+    askBudget: 'Каков ваш примерный бюджет?',
+    quickReplies_budget: ['До 150 000 €','150 000 – 250 000 €','250 000 – 350 000 €','350 000 € и выше'],
+    askPriority: 'Что для вас наиболее важно?',
+    quickReplies_priority: ['Сад и простор','Близость школ','Низкие расходы (A0+)','Парковая среда'],
+    askType: 'Вас интересует:',
+    quickReplies_type: ['Частный дом','Квартира','Участок под застройку'],
+    thinking: 'Анализирую ваши требования...',
+    noResults: 'Точного совпадения нет, но вот наши ближайшие предложения:',
+    results: (n) => `Отлично! По вашим требованиям я нашёл ${n} объект${n===1?'':n<5?'а':'ов'}:`,
+    viewAll: 'Показать все объявления',
+    detail: 'Подробнее',
+    reset: '↺ Начать сначала',
+    placeholder: 'Напишите сообщение...',
+    advisor: 'ИИ-консультант',
+    back: 'К объявлениям',
+    filterHint: 'Хотите настроить фильтры или просмотреть все доступные объекты?',
+    ctaAll: '🏠 Все объекты недвижимости',
+  },
+  uk: {
+    welcome: 'Привіт! 👋 Я ваш ШІ-консультант з нерухомості. Допоможу знайти дім, який ідеально підходить для вашої ситуації.\n\nПочнемо — **скільки людей проживатиме в новому будинку?**',
+    quickReplies_start: ['1–2 особи','3–4 особи','5 і більше'],
+    askChildren: 'Маєте або плануєте дітей?',
+    quickReplies_children: ['Без дітей','1–2 дитини','3+ дітей'],
+    askBudget: 'Який ваш орієнтовний бюджет?',
+    quickReplies_budget: ['До 150 000 €','150 000 – 250 000 €','250 000 – 350 000 €','350 000 € і вище'],
+    askPriority: 'Що для вас найважливіше?',
+    quickReplies_priority: ['Сад і простір','Близькість шкіл','Низькі витрати (A0+)','Паркове середовище'],
+    askType: 'Вас цікавить:',
+    quickReplies_type: ['Приватний будинок','Квартира','Ділянка під забудову'],
+    thinking: 'Аналізую ваші вимоги...',
+    noResults: 'Точного збігу немає, але ось наші найближчі пропозиції:',
+    results: (n) => `Чудово! За вашими вимогами знайдено ${n} об\'єкт${n===1?'':n<5?'и':'ів'}:`,
+    viewAll: 'Показати всі оголошення',
+    detail: 'Деталі',
+    reset: '↺ Почати спочатку',
+    placeholder: 'Напишіть повідомлення...',
+    advisor: 'ШІ-консультант',
+    back: 'До оголошень',
+    filterHint: 'Бажаєте налаштувати фільтри або переглянути всі доступні об\'єкти?',
+    ctaAll: '🏠 Усі об\'єкти нерухомості',
+  },
+};
+
+function t(key, ...args) {
+  const lang = LangSwitcher.get();
+  const dict = T[lang] || T.sk;
+  const val = dict[key];
+  return typeof val === 'function' ? val(...args) : (val || T.sk[key] || key);
+}
+
+/* ══════════════════════════════════════════════
+   CHAT ENGINE
+══════════════════════════════════════════════ */
+const Chat = (() => {
+  let listings = [];
+  let context = {}; // user answers
+  let step = 'start';
+  let isTyping = false;
+  let history = []; // for Anthropic API
+
+  const SYSTEM_PROMPT = () => `Si AI poradca pre nehnuteľnosti na webe 484.sk. Stránka predáva nehnuteľnosti priamo od majiteľa, bez realitnej kancelárie, bez provízií. Primárne ponúka rodinné domy v Mokranciach, Košický kraj, Slovensko.
+
+Tvoja úloha:
+1. Zistiť potreby používateľa (veľkosť rodiny, deti, rozpočet, priority)
+2. Odporučiť vhodné nehnuteľnosti z databázy
+3. Byť priateľský, stručný, konkrétny — max 2-3 vety na správu
+4. Písať v jazyku: ${LangSwitcher.get()}
+5. NIKDY nevymýšľaj nehnuteľnosti — pracuj len s tými čo ti dám
+
+Dostupné nehnuteľnosti:
+${listings.map(l => `- ID:${l.id} | ${l.nazov} | ${Number(l.cena).toLocaleString('sk')} € | ${l.obec}, ${l.kraj} | ${l.typ} | ${l.uzitk_plocha||'?'} m² | ${l.stav||''} | ${l.energy_class||''}`).join('\n')}
+
+Kontext používateľa: ${JSON.stringify(context)}
+
+Keď odporúčaš nehnuteľnosti, uveď ich ID-čka vo formáte [IDs:1,2,3] na konci správy.`;
+
+  function fmt(n) { return Number(n).toLocaleString('sk') + ' €'; }
+
+  function scrollToBottom() {
+    const el = document.getElementById('chatInner');
+    requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' }));
+  }
+
+  function addMessage(role, content, quickReplies = [], cards = []) {
+    const el = document.getElementById('chatInner');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = role === 'bot' ? '🏠' : '👤';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+
+    // Markdown-lite: bold + newlines
+    const html = content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+    bubble.innerHTML = `<p>${html}</p>`;
+
+    // Quick replies
+    if (quickReplies.length) {
+      const qr = document.createElement('div');
+      qr.className = 'quick-replies';
+      quickReplies.forEach(label => {
+        const btn = document.createElement('button');
+        btn.className = 'qr-btn';
+        btn.textContent = label;
+        btn.onclick = () => {
+          // Disable all QR buttons
+          qr.querySelectorAll('.qr-btn').forEach(b => b.disabled = true);
+          handleUserInput(label);
+        };
+        qr.appendChild(btn);
+      });
+      bubble.appendChild(qr);
+    }
+
+    // Listing cards
+    if (cards.length) {
+      const cardWrap = document.createElement('div');
+      cardWrap.className = 'chat-listings';
+      cards.forEach(item => {
+        const img = Array.isArray(item.foto_urls) && item.foto_urls[0]
+          ? `<img src="${item.foto_urls[0]}" alt="${item.nazov}" loading="lazy">`
+          : `<span style="font-size:28px;opacity:0.4">🏠</span>`;
+        const card = document.createElement('a');
+        card.className = 'chat-card';
+        card.href = `index.html#listing-${item.id}`;
+        card.target = '_blank';
+        card.innerHTML = `
+          <div class="chat-card-img">${img}</div>
+          <div class="chat-card-body">
+            <div class="chat-card-title">${item.nazov}</div>
+            <div class="chat-card-meta">${item.obec} · ${item.uzitk_plocha ? item.uzitk_plocha + ' m²' : ''}</div>
+            <div class="chat-card-price">${fmt(item.cena)}</div>
+          </div>`;
+        cardWrap.appendChild(card);
+      });
+      // CTA buttons
+      const ctaWrap = document.createElement('div');
+      ctaWrap.className = 'chat-cta-wrap';
+      const ctaAll = document.createElement('a');
+      ctaAll.className = 'chat-cta';
+      ctaAll.href = 'index.html';
+      ctaAll.innerHTML = t('ctaAll');
+      ctaWrap.appendChild(ctaAll);
+      bubble.appendChild(cardWrap);
+      bubble.appendChild(ctaWrap);
+    }
+
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+    el.appendChild(div);
+
+    // Reset button after results
+    if (cards.length) {
+      const resetDiv = document.createElement('div');
+      resetDiv.style.cssText = 'display:flex;justify-content:center;padding:4px 0';
+      const rb = document.createElement('button');
+      rb.className = 'reset-btn';
+      rb.textContent = t('reset');
+      rb.onclick = restart;
+      resetDiv.appendChild(rb);
+      el.appendChild(resetDiv);
+    }
+
+    history.push({ role: role === 'bot' ? 'assistant' : 'user', content });
+    scrollToBottom();
+  }
+
+  function showTyping() {
+    isTyping = true;
+    const el = document.getElementById('chatInner');
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    div.id = 'typingIndicator';
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = '🏠';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble typing';
+    bubble.innerHTML = '<span></span><span></span><span></span>';
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+    el.appendChild(div);
+    scrollToBottom();
+  }
+
+  function hideTyping() {
+    isTyping = false;
+    document.getElementById('typingIndicator')?.remove();
+  }
+
+  async function askAI(userMsg) {
+    showTyping();
+    document.getElementById('sendBtn').disabled = true;
+
+    history.push({ role: 'user', content: userMsg });
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT(),
+          messages: history.filter(m => m.role !== 'assistant' || m.content).slice(-10),
+        }),
+      });
+
+      const data = await res.json();
+      const raw = data.content?.[0]?.text || '';
+
+      // Parsuj odporúčané ID-čka
+      const idMatch = raw.match(/\[IDs:([\d,\s]+)\]/);
+      const cleanText = raw.replace(/\[IDs:[\d,\s]+\]/g, '').trim();
+      let cards = [];
+      if (idMatch) {
+        const ids = idMatch[1].split(',').map(x => parseInt(x.trim())).filter(Boolean);
+        cards = listings.filter(l => ids.includes(l.id));
+      }
+
+      hideTyping();
+      addMessage('bot', cleanText, [], cards);
+
+    } catch (err) {
+      hideTyping();
+      addMessage('bot', 'Oops, nastala chyba. Skúste to znova.');
+      console.error(err);
+    } finally {
+      document.getElementById('sendBtn').disabled = false;
+    }
+  }
+
+  async function handleUserInput(text) {
+    if (!text.trim()) return;
+    addMessage('user', text);
+    document.getElementById('inputBox').value = '';
+    autoResize();
+
+    // Update context based on step
+    if (step === 'start') {
+      context.people = text;
+      step = 'children';
+      setTimeout(() => addMessage('bot', t('askChildren'), t('quickReplies_children')), 600);
+    } else if (step === 'children') {
+      context.children = text;
+      step = 'budget';
+      setTimeout(() => addMessage('bot', t('askBudget'), t('quickReplies_budget')), 600);
+    } else if (step === 'budget') {
+      context.budget = text;
+      step = 'priority';
+      setTimeout(() => addMessage('bot', t('askPriority'), t('quickReplies_priority')), 600);
+    } else if (step === 'priority') {
+      context.priority = text;
+      step = 'type';
+      setTimeout(() => addMessage('bot', t('askType'), t('quickReplies_type')), 600);
+    } else if (step === 'type') {
+      context.type = text;
+      step = 'ai';
+      // Zostavíme súhrn pre AI
+      const summary = `Hľadám nehnuteľnosť. Počet osôb: ${context.people}. Deti: ${context.children}. Rozpočet: ${context.budget}. Priorita: ${context.priority}. Typ: ${context.type}.`;
+      await askAI(summary);
+    } else {
+      // Voľný chat s AI
+      await askAI(text);
+    }
+  }
+
+  function autoResize() {
+    const box = document.getElementById('inputBox');
+    box.style.height = 'auto';
+    box.style.height = Math.min(box.scrollHeight, 120) + 'px';
+  }
+
+  function restart() {
+    context = {};
+    step = 'start';
+    history = [];
+    document.getElementById('chatInner').innerHTML = '';
+    setTimeout(start, 300);
+  }
+
+  function start() {
+    addMessage('bot', t('welcome'), t('quickReplies_start'));
+  }
+
+  async function init() {
+    LangSwitcher.init();
+    listings = await loadListings();
+
+    const box = document.getElementById('inputBox');
+    box.placeholder = t('placeholder');
+    box.addEventListener('input', autoResize);
+    box.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+
+    start();
+  }
+
+  function send() {
+    const text = document.getElementById('inputBox').value.trim();
+    if (!text || isTyping) return;
+    handleUserInput(text);
+  }
+
+  return { init, send, restart };
+})();
+
+document.addEventListener('DOMContentLoaded', Chat.init);
+</script>
+</body>
+</html>
